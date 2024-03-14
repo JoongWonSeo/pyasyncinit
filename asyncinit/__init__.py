@@ -29,6 +29,8 @@ themselves (as long as they don't override `__new__`.)
 
 import functools
 import inspect
+import warnings
+
 
 def asyncinit(obj):
     """
@@ -36,7 +38,11 @@ def asyncinit(obj):
     """
 
     if not inspect.isclass(obj):
-        raise ValueError("decorated object must be a class")
+        warnings.warn(
+            "@asyncinit: decorated object must be a class! will now throw an error as a workaround for intellisense!"
+        )
+        # do something that will cause a runtime error, since raising will break intellisense
+        1 / 0
 
     if obj.__new__ is object.__new__:
         cls_new = _new
@@ -56,6 +62,7 @@ def asyncinit(obj):
 
     return obj
 
+
 # Force the given function to be `await`-able.
 def _force_async(fn):
     if inspect.iscoroutinefunction(fn):
@@ -66,11 +73,13 @@ def _force_async(fn):
 
     return wrapped
 
+
 # Wraps `object.__new__` in a coroutine, only passing it the class object. This kludge is
 # required because that function throws `TypeError: object() takes no parameters` if
 # passed any other parameters.
 async def _new(cls, *args, **kwargs):
     return object.__new__(cls)
+
 
 def _test_asyncinit():
     import asyncio
